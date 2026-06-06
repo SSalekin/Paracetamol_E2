@@ -1,8 +1,10 @@
 # Paracetamol_E2
 Repository for our solution of E2 - ViralScore project of AI Cross Border Hackathon
 
+## Project Architecture
+![Project Architecture](./Docs/paracetamol_e2_architecture.png)
 
-## Setup
+## Setups
 ```bash
 source .venv/bin/activate
 
