@@ -29,6 +29,8 @@ htmlcov/
 .codex/
 .agents/
 .claude/
+.dbg/
+debug*
 
 # OS
 .DS_Store
