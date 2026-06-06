@@ -6,7 +6,7 @@ from typing import Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 
-from backend.video_score_generator import (
+from backend.app.video_score_generator import (
     ViralScoreResponse,
     VideoFrameExtractionError,
     run_video_file_viral_score_pipeline,
