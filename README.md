@@ -9,6 +9,11 @@ source .venv/bin/activate
 uv sync
 ```
 
+## Seting up HEVC support on os
+```bash
+sudo apt update && sudo apt install -y ffmpeg libx265-dev x265 libavcodec-extra
+```
+
 ## Run backend
 ```bash
 uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
