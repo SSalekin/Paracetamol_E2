@@ -58,15 +58,16 @@ with st.sidebar:
     st.title(LANGUAGES[st.session_state.language]["sidebar_title"])
 
     # Language Selector
-    selected_lang = st.selectbox(
+    def on_lang_change():
+        st.session_state.language = st.session_state.lang_selector
+
+    st.selectbox(
         "Language / Ngôn ngữ",
         options=["EN", "VN"],
         index=0 if st.session_state.language == "EN" else 1,
-        key="lang_selector"
+        key="lang_selector",
+        on_change=on_lang_change
     )
-    if selected_lang != st.session_state.language:
-        st.session_state.language = selected_lang
-        st.rerun()
 
     uploaded_video = st.file_uploader(
         LANGUAGES[st.session_state.language]["upload_label"],
