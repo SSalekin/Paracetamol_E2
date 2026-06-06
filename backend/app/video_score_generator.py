@@ -12,7 +12,11 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableLambda
 from langchain_openai import ChatOpenAI  # Dola Seed 2.0 Lite uses the OpenAI-compatible SDK
 
-load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+for parent in Path(__file__).resolve().parents:
+    env_path = parent / ".env"
+    if env_path.exists():
+        load_dotenv(env_path)
+        break
 
 # =====================================================================
 # 1. DEFINE RIGID PYDANTIC SCHEMAS FOR THE 7-DIMENSION ANALYTICS
@@ -186,11 +190,6 @@ def _extract_first_three_seconds_frames(video_path: str) -> List[str]:
         cap.release()
 
 
-def _validate_dola_config() -> None:
-    if not DOLA_API_KEY or DOLA_API_KEY == "your_byteplus_ark_api_key_here":
-        raise RuntimeError("DOLA_API_KEY is not configured. Set it before scoring videos.")
-
-
 async def _extract_frames_step(payload: Dict[str, Any]) -> Dict[str, Any]:
     frames_b64 = await asyncio.to_thread(_extract_first_three_seconds_frames, payload["video_path"])
     return {**payload, "hook_frames_b64": frames_b64, "body_frames_b64": []}
@@ -227,7 +226,6 @@ async def run_viral_score_pipeline(
     """
     Orchestrates data packaging and invokes the LangChain LCEL pipe asynchronously.
     """
-    _validate_dola_config()
 
     user_content = [
         {
