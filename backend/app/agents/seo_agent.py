@@ -15,18 +15,20 @@ async def run_seo_agent(state_data: dict) -> AgentResult:
     if trend_context and trend_context != "live audio and keyword trend context was not provided.":
         keyword_hits += 1
 
-    score = min(85, 35 + keyword_hits * 15)
+    score = min(85, 55 + keyword_hits * 10)
 
     return AgentResult(
         name="search_keyword_relevance",
         score=score,
         summary=f"SEO relevance score {score}/100",
-        reason="SEO score is based on niche keyword presence and supplied trend context.",
+        reason="SEO score is based on niche keyword presence and supplied trend context. This should not strongly penalize visual-first videos when transcript or on-screen OCR is unavailable.",
         actionable_tips=[
             "Add the main niche keyword as spoken audio and on-screen text within the first 3 seconds."
         ],
         skills={},
         extra={
             "keyword_hits": keyword_hits,
+            "heuristic_only": True,
+            "confidence": "medium" if keyword_hits else "low",
         },
     )

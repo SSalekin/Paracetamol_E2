@@ -16,18 +16,20 @@ async def run_engagement_agent(state_data: dict) -> AgentResult:
 
     matched = [trigger for trigger in engagement_triggers if trigger in text]
 
-    score = min(85, 40 + len(matched) * 12)
+    score = min(85, 55 + len(matched) * 10)
 
     return AgentResult(
         name="early_engagement_velocity",
         score=score,
         summary=f"Engagement velocity score {score}/100",
-        reason="Engagement velocity is estimated from comment prompts, curiosity loops, and question triggers.",
+        reason="Engagement velocity is estimated from comment prompts, curiosity loops, and question triggers. Treat this as heuristic-only because visual surprise can also drive early engagement.",
         actionable_tips=[
             "Add one low-friction comment prompt, not a generic 'comment below'."
         ],
         skills={},
         extra={
             "matched_triggers": matched,
+            "heuristic_only": True,
+            "confidence": "medium" if matched else "low",
         },
     )

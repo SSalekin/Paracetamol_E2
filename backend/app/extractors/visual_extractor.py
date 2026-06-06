@@ -176,7 +176,7 @@ def extract_visual_package(video_path: str) -> dict[str, Any]:
             "hook_frames_b64": extract_hook_frames(
                 video_path,
                 seconds=3,
-                frames_per_second=1,
+                frames_per_second=3,
             ),
             "visual_features": extract_visual_features(
                 video_path,
@@ -193,7 +193,7 @@ def extract_visual_package(video_path: str) -> dict[str, Any]:
                 "hook_frames_b64": extract_hook_frames(
                     transcoded_path,
                     seconds=3,
-                    frames_per_second=1,
+                    frames_per_second=3,
                 ),
                 "visual_features": extract_visual_features(
                     transcoded_path,

@@ -17,10 +17,10 @@ async def run_share_save_agent(state_data: dict) -> AgentResult:
 
     matched = [word for word in value_words if word in text]
 
-    score = min(90, 40 + len(matched) * 10)
+    score = min(90, 55 + len(matched) * 10)
 
     if not matched:
-        reason = "The script does not clearly contain save-worthy utility, warning, checklist, or strong emotional trigger."
+        reason = "No explicit save/share trigger was found in the supplied script text. This is a medium-confidence heuristic because visual identity, product desirability, or emotional framing may still create share value."
         tips = ["Add a specific promise such as: 'Save this before you buy...' or 'Avoid this mistake...'"]
     else:
         reason = f"The script contains save/share triggers: {', '.join(matched)}."
@@ -33,5 +33,9 @@ async def run_share_save_agent(state_data: dict) -> AgentResult:
         reason=reason,
         actionable_tips=tips,
         skills={},
-        extra={"matched_triggers": matched},
+        extra={
+            "matched_triggers": matched,
+            "heuristic_only": True,
+            "confidence": "medium" if matched else "low",
+        },
     )

@@ -58,6 +58,25 @@ def _score(agent_results: dict[str, Any], key: str, default: int = 50) -> int:
     return int(result.get("score", default))
 
 
+def _confidence_adjusted_score(
+    agent_results: dict[str, Any],
+    key: str,
+    default: int = 60,
+) -> int:
+    result = agent_results.get(key)
+
+    if not result:
+        return default
+
+    score = int(result.get("score", default))
+    extra = result.get("extra") or {}
+
+    if extra.get("heuristic_only") and extra.get("confidence") == "low":
+        return max(score, default)
+
+    return score
+
+
 def aggregate_score(state_data: dict[str, Any]) -> ViralScoreResponse:
     agent_results = state_data.get("agent_results", {})
     debug_trace = list(state_data.get("debug_trace", []))
@@ -82,13 +101,13 @@ def aggregate_score(state_data: dict[str, Any]) -> ViralScoreResponse:
     }
 
     overall_score = round(
-        _score(agent_results, "hook_strength") * weights["hook_strength"]
-        + _score(agent_results, "completion_rate") * weights["completion_rate"]
-        + _score(agent_results, "shares_saves_probability") * weights["shares_saves_probability"]
-        + _score(agent_results, "sound_trend_timing") * weights["sound_trend_timing"]
-        + _score(agent_results, "search_keyword_relevance") * weights["search_keyword_relevance"]
-        + _score(agent_results, "early_engagement_velocity") * weights["early_engagement_velocity"]
-        + _score(agent_results, "content_niche_fit") * weights["content_niche_fit"]
+        _confidence_adjusted_score(agent_results, "hook_strength") * weights["hook_strength"]
+        + _confidence_adjusted_score(agent_results, "completion_rate") * weights["completion_rate"]
+        + _confidence_adjusted_score(agent_results, "shares_saves_probability") * weights["shares_saves_probability"]
+        + _confidence_adjusted_score(agent_results, "sound_trend_timing") * weights["sound_trend_timing"]
+        + _confidence_adjusted_score(agent_results, "search_keyword_relevance") * weights["search_keyword_relevance"]
+        + _confidence_adjusted_score(agent_results, "early_engagement_velocity") * weights["early_engagement_velocity"]
+        + _confidence_adjusted_score(agent_results, "content_niche_fit") * weights["content_niche_fit"]
     )
 
     return ViralScoreResponse(
