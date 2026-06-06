@@ -2,6 +2,9 @@ import os
 import asyncio
 import base64
 import json
+import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -60,6 +63,10 @@ class VideoScorePipelineInput(BaseModel):
 
 
 class VideoFrameExtractionError(ValueError):
+    pass
+
+
+class VideoTranscodeError(ValueError):
     pass
 
 # =====================================================================
@@ -142,7 +149,7 @@ def _image_payload_from_base64(frames_b64: List[str]) -> List[Dict[str, Any]]:
     ]
 
 
-def _extract_first_three_seconds_frames(video_path: str) -> List[str]:
+def _extract_frames_with_opencv(video_path: str) -> List[str]:
     """
     Extract the first 3 frames from each of the first 3 seconds: 0s, 1s, and 2s.
     Returns up to 9 JPEG base64 strings in chronological order.
@@ -188,6 +195,77 @@ def _extract_first_three_seconds_frames(video_path: str) -> List[str]:
         return frames_b64
     finally:
         cap.release()
+
+
+def _transcode_first_three_seconds_to_h264(video_path: str) -> str:
+    if not shutil.which("ffmpeg"):
+        raise VideoTranscodeError(
+            "Uploaded video appears to use a codec OpenCV cannot decode, and ffmpeg is not installed. "
+            "Install ffmpeg with HEVC support or upload an H.264 MP4."
+        )
+
+    output = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+    output_path = output.name
+    output.close()
+
+    command = [
+        "ffmpeg",
+        "-y",
+        "-v",
+        "error",
+        "-i",
+        video_path,
+        "-t",
+        "3",
+        "-map",
+        "0:v:0",
+        "-an",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "veryfast",
+        "-pix_fmt",
+        "yuv420p",
+        output_path,
+    ]
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, check=False)
+    except OSError as exc:
+        if os.path.exists(output_path):
+            os.unlink(output_path)
+        raise VideoTranscodeError(f"Could not run ffmpeg: {exc}") from exc
+
+    if result.returncode != 0:
+        if os.path.exists(output_path):
+            os.unlink(output_path)
+        stderr = result.stderr.strip() or "ffmpeg could not transcode the uploaded video."
+        raise VideoTranscodeError(stderr)
+
+    return output_path
+
+
+def _extract_first_three_seconds_frames(video_path: str) -> List[str]:
+    """
+    Extract hook frames directly with OpenCV. If OpenCV cannot decode the input
+    codec, transcode the first 3 seconds to H.264 and retry. This supports common
+    HEVC/H.265 MP4 uploads from iPhone and Android devices.
+    """
+    try:
+        return _extract_frames_with_opencv(video_path)
+    except VideoFrameExtractionError as first_error:
+        transcoded_path = None
+        try:
+            transcoded_path = _transcode_first_three_seconds_to_h264(video_path)
+            return _extract_frames_with_opencv(transcoded_path)
+        except VideoTranscodeError as transcode_error:
+            raise VideoFrameExtractionError(str(transcode_error)) from transcode_error
+        except VideoFrameExtractionError as retry_error:
+            raise VideoFrameExtractionError(
+                f"{first_error} Retried after transcoding, but frame extraction still failed: {retry_error}"
+            ) from retry_error
+        finally:
+            if transcoded_path and os.path.exists(transcoded_path):
+                os.unlink(transcoded_path)
 
 
 async def _extract_frames_step(payload: Dict[str, Any]) -> Dict[str, Any]:
