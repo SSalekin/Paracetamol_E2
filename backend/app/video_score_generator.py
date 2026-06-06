@@ -6,14 +6,14 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TypedDict
 
 import cv2
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_core.runnables import RunnableLambda
 from langchain_openai import ChatOpenAI  # Dola Seed 2.0 Lite uses the OpenAI-compatible SDK
+from langgraph.graph import END, START, StateGraph
 
 for parent in Path(__file__).resolve().parents:
     env_path = parent / ".env"
@@ -60,6 +60,18 @@ class VideoScorePipelineInput(BaseModel):
     posting_time: str = "Not specified"
     full_transcript: str = "Transcript was not provided."
     trend_context: str = "Live audio and keyword trend context was not provided."
+
+
+class VideoScoreGraphState(TypedDict, total=False):
+    video_path: str
+    niche: str
+    audience: str
+    posting_time: str
+    full_transcript: str
+    trend_context: str
+    hook_frames_b64: List[str]
+    body_frames_b64: List[str]
+    viral_score: ViralScoreResponse
 
 
 class VideoFrameExtractionError(ValueError):
@@ -285,8 +297,23 @@ async def _score_frames_step(payload: Dict[str, Any]) -> ViralScoreResponse:
     )
 
 
-# Create the operational LCEL chain, including OpenCV preprocessing as a LangChain stage.
-video_file_viral_score_chain = RunnableLambda(_extract_frames_step) | RunnableLambda(_score_frames_step)
+async def _score_frames_node(state: VideoScoreGraphState) -> Dict[str, ViralScoreResponse]:
+    score = await _score_frames_step(state)
+    return {"viral_score": score}
+
+
+def _build_video_score_graph():
+    graph = StateGraph(VideoScoreGraphState)
+    graph.add_node("extract_hook_frames", _extract_frames_step)
+    graph.add_node("score_frames", _score_frames_node)
+    graph.add_edge(START, "extract_hook_frames")
+    graph.add_edge("extract_hook_frames", "score_frames")
+    graph.add_edge("score_frames", END)
+    return graph.compile()
+
+
+# LangGraph orchestrates the video scoring workflow; LangChain handles model calls.
+video_file_viral_score_graph = _build_video_score_graph()
 
 # =====================================================================
 # 4. ASYNC ORCHESTRATION PIPELINE FOR THE FASTAPI ROUTER LAYER
@@ -362,7 +389,8 @@ async def run_video_file_viral_score_pipeline(
         full_transcript=full_transcript,
         trend_context=trend_context,
     )
-    return await video_file_viral_score_chain.ainvoke(pipeline_input.model_dump())
+    final_state = await video_file_viral_score_graph.ainvoke(pipeline_input.model_dump())
+    return final_state["viral_score"]
 
 # =====================================================================
 # 5. LOCAL VERIFICATION BLOCK
