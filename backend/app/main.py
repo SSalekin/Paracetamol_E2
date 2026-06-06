@@ -6,11 +6,9 @@ from typing import Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 
-from backend.app.video_score_generator import (
-    ViralScoreResponse,
-    VideoFrameExtractionError,
-    run_video_file_viral_score_pipeline,
-)
+from backend.app.schemas.scoring import ViralScoreResponse
+from backend.app.extractors.visual_extractor import VideoFrameExtractionError
+from backend.app.video_score_generator import run_video_file_viral_score_pipeline
 
 logger = logging.getLogger(__name__)
 
