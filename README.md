@@ -33,6 +33,14 @@ WHISPER_PROVIDER=local LOCAL_WHISPER_MODEL=base uvicorn backend.app.main:app --h
 
 Use `WHISPER_PROVIDER=auto` to prefer OpenAI Whisper when `OPENAI_API_KEY` exists, otherwise try local `faster-whisper`.
 
+## Agent intelligence
+Specialist agents use the configured Seed model by default, then fall back to deterministic local heuristics if a model call fails.
+
+For offline testing or faster local iteration:
+```bash
+AGENT_LLM_ENABLED=false uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
+```
+
 ## Run backend
 ```bash
 uvicorn backend.app.main:app --host 0.0.0.0 --port 8000

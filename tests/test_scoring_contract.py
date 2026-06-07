@@ -164,8 +164,10 @@ async def _collect_skill_agents():
     }
 
 
-def test_non_hook_agents_emit_skill_breakdowns():
+def test_non_hook_agents_emit_skill_breakdowns(monkeypatch):
     import asyncio
+
+    monkeypatch.setenv("AGENT_LLM_ENABLED", "false")
 
     results = asyncio.run(_collect_skill_agents())
 
