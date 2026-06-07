@@ -7,6 +7,7 @@ from backend.app.agents.retention import run_retention_agent
 from backend.app.agents.seo import run_seo_agent
 from backend.app.agents.share_save import run_share_save_agent
 from backend.app.agents.trend import run_trend_agent
+from backend.app.extractors.transcript_extractor import extract_text_script
 
 
 def test_hook_frame_extraction_samples_three_frames_per_second(tmp_path):
@@ -204,3 +205,35 @@ def test_non_hook_agents_emit_skill_breakdowns():
         "brand_consistency",
         "viewer_problem_match",
     }
+
+
+def test_manual_transcript_takes_precedence_over_whisper(monkeypatch):
+    import asyncio
+
+    monkeypatch.setenv("WHISPER_PROVIDER", "disabled")
+
+    transcript = asyncio.run(
+        extract_text_script(
+            video_path="/does/not/matter.mp4",
+            provided_transcript="User supplied transcript",
+            fallback_text="Fallback text",
+        )
+    )
+
+    assert transcript == "User supplied transcript"
+
+
+def test_transcript_extractor_falls_back_when_whisper_disabled(monkeypatch):
+    import asyncio
+
+    monkeypatch.setenv("WHISPER_PROVIDER", "disabled")
+
+    transcript = asyncio.run(
+        extract_text_script(
+            video_path="/does/not/matter.mp4",
+            provided_transcript=None,
+            fallback_text="Fallback text",
+        )
+    )
+
+    assert transcript == "Fallback text"

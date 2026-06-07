@@ -18,6 +18,21 @@ sudo apt update && sudo apt install -y ffmpeg libx265-dev x265 libavcodec-extra
 
 The backend falls back to `ffmpeg` when OpenCV cannot decode HEVC/H.265 MP4 uploads.
 
+## Whisper transcription
+The backend transcribes uploaded video audio before scoring when no transcript is provided.
+
+OpenAI Whisper:
+```bash
+OPENAI_API_KEY=... WHISPER_PROVIDER=openai WHISPER_MODEL=whisper-1 uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
+```
+
+Local Whisper is also supported if `faster-whisper` is installed:
+```bash
+WHISPER_PROVIDER=local LOCAL_WHISPER_MODEL=base uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
+```
+
+Use `WHISPER_PROVIDER=auto` to prefer OpenAI Whisper when `OPENAI_API_KEY` exists, otherwise try local `faster-whisper`.
+
 ## Run backend
 ```bash
 uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
