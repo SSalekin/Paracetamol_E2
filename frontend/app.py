@@ -1,6 +1,9 @@
 import streamlit as st
 import requests
 import os
+import re
+import textwrap
+from datetime import datetime
 
 # Internationalization (i18n)
 LANGUAGES = {
@@ -65,8 +68,17 @@ if "viral_score_result" not in st.session_state:
 if "scored_video_name" not in st.session_state:
     st.session_state.scored_video_name = None
 
+if "scored_video_signature" not in st.session_state:
+    st.session_state.scored_video_signature = None
+
 if "last_score_message_video_name" not in st.session_state:
     st.session_state.last_score_message_video_name = None
+
+if "last_score_message_video_signature" not in st.session_state:
+    st.session_state.last_score_message_video_signature = None
+
+if "generated_reports" not in st.session_state:
+    st.session_state.generated_reports = []
 
 
 def format_score_summary(score):
@@ -83,6 +95,152 @@ def format_score_summary(score):
         f"**Completion Rate:** {completion.get('score', 0)}/100\n\n"
         f"**Recommended fix:** {fix}"
     )
+
+
+def sanitize_report_filename(video_name):
+    safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", video_name).strip("_")
+    safe_name = safe_name or "video"
+    return f"{safe_name}_{datetime.now().strftime('%Y-%m-%d')}.pdf"
+
+
+def pdf_escape(text):
+    return (
+        str(text)
+        .replace("\\", "\\\\")
+        .replace("(", "\\(")
+        .replace(")", "\\)")
+    )
+
+
+def build_pdf_report(video_name, score, generated_at):
+    dimensions = [
+        ("Hook Strength", "hook_strength"),
+        ("Completion Rate", "completion_rate"),
+        ("Shares/Saves Probability", "shares_saves_probability"),
+        ("Sound Trend Timing", "sound_trend_timing"),
+        ("Search Keyword Relevance", "search_keyword_relevance"),
+        ("Early Engagement Velocity", "early_engagement_velocity"),
+        ("Content Niche Fit", "content_niche_fit"),
+    ]
+
+    lines = [
+        "ViralScore AI Report",
+        f"Video: {video_name}",
+        f"Generated: {generated_at.strftime('%Y-%m-%d %H:%M:%S')}",
+        f"Overall Score: {score.get('overall_score', 0)}/100",
+        f"Predicted Reach: {score.get('predicted_reach_range', 'Not returned')}",
+        "",
+        "Dimension Scores",
+    ]
+
+    for label, key in dimensions:
+        dimension = score.get(key, {})
+        lines.extend(
+            [
+                "",
+                f"{label}: {dimension.get('score', 0)}/100",
+                f"Explanation: {dimension.get('explanation', 'Not returned')}",
+                f"Actionable Fix: {dimension.get('actionable_fix', 'Not returned')}",
+            ]
+        )
+
+    lines.append("")
+    lines.append("Retention Drop Zones")
+    for zone in score.get("retention_drop_zones", []) or []:
+        lines.extend(
+            [
+                "",
+                f"Time: {zone.get('timestamp_range', 'Not returned')}",
+                f"Severity: {zone.get('severity', 'Not returned')}",
+                f"Reason: {zone.get('reason', 'Not returned')}",
+            ]
+        )
+
+    if score.get("suggested_script_variant"):
+        lines.extend(["", "Suggested Script Variant", score["suggested_script_variant"]])
+
+    wrapped_lines = []
+    for line in lines:
+        if not line:
+            wrapped_lines.append("")
+            continue
+        wrapped_lines.extend(textwrap.wrap(str(line), width=92) or [""])
+
+    pages = []
+    current_page = []
+    max_lines_per_page = 48
+    for line in wrapped_lines:
+        current_page.append(line)
+        if len(current_page) >= max_lines_per_page:
+            pages.append(current_page)
+            current_page = []
+    if current_page:
+        pages.append(current_page)
+
+    objects = []
+    page_refs = []
+
+    def add_object(content):
+        objects.append(content)
+        return len(objects)
+
+    catalog_id = add_object("<< /Type /Catalog /Pages 2 0 R >>")
+    pages_id = add_object("")
+    font_id = add_object("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
+
+    for page in pages:
+        text_commands = ["BT", "/F1 10 Tf", "14 TL", "50 790 Td"]
+        for line in page:
+            text_commands.append(f"({pdf_escape(line)}) Tj")
+            text_commands.append("T*")
+        text_commands.append("ET")
+        stream = "\n".join(text_commands)
+        content_id = add_object(f"<< /Length {len(stream.encode('latin-1', 'replace'))} >>\nstream\n{stream}\nendstream")
+        page_id = add_object(
+            f"<< /Type /Page /Parent {pages_id} 0 R /MediaBox [0 0 595 842] "
+            f"/Resources << /Font << /F1 {font_id} 0 R >> >> /Contents {content_id} 0 R >>"
+        )
+        page_refs.append(page_id)
+
+    objects[pages_id - 1] = f"<< /Type /Pages /Kids [{' '.join(f'{page_id} 0 R' for page_id in page_refs)}] /Count {len(page_refs)} >>"
+
+    pdf_parts = ["%PDF-1.4\n"]
+    offsets = []
+    for index, content in enumerate(objects, start=1):
+        offsets.append(sum(len(part.encode("latin-1", "replace")) for part in pdf_parts))
+        pdf_parts.append(f"{index} 0 obj\n{content}\nendobj\n")
+
+    xref_offset = sum(len(part.encode("latin-1", "replace")) for part in pdf_parts)
+    pdf_parts.append(f"xref\n0 {len(objects) + 1}\n")
+    pdf_parts.append("0000000000 65535 f \n")
+    for offset in offsets:
+        pdf_parts.append(f"{offset:010d} 00000 n \n")
+    pdf_parts.append(
+        f"trailer\n<< /Size {len(objects) + 1} /Root {catalog_id} 0 R >>\n"
+        f"startxref\n{xref_offset}\n%%EOF"
+    )
+
+    return "".join(pdf_parts).encode("latin-1", "replace")
+
+
+def add_generated_report(video_name, score):
+    generated_at = datetime.now()
+    report = {
+        "id": f"report_{len(st.session_state.generated_reports)}",
+        "video_name": video_name,
+        "file_name": sanitize_report_filename(video_name),
+        "created_label": generated_at.strftime("%Y-%m-%d %H:%M:%S"),
+        "pdf_bytes": build_pdf_report(video_name, score, generated_at),
+    }
+    st.session_state.generated_reports.append(report)
+    return report
+
+
+def get_report(report_id):
+    for report in st.session_state.generated_reports:
+        if report["id"] == report_id:
+            return report
+    return None
 
 
 def raise_for_backend_error(response):
@@ -121,10 +279,11 @@ with st.sidebar:
     )
 
     if uploaded_video is not None:
+        uploaded_video_signature = f"{uploaded_video.name}:{getattr(uploaded_video, 'size', 'unknown')}"
         st.video(uploaded_video)
         st.success(LANGUAGES[st.session_state.language]["upload_success"])
 
-        if st.session_state.scored_video_name != uploaded_video.name:
+        if st.session_state.scored_video_signature != uploaded_video_signature:
             st.session_state.viral_score_result = None
 
         if st.session_state.viral_score_result is None:
@@ -146,6 +305,7 @@ with st.sidebar:
                     raise_for_backend_error(response)
                     st.session_state.viral_score_result = response.json()
                     st.session_state.scored_video_name = uploaded_video.name
+                    st.session_state.scored_video_signature = uploaded_video_signature
                 except Exception as e:
                     st.error(f"{LANGUAGES[st.session_state.language]['score_error']}: {e}")
 
@@ -155,19 +315,25 @@ with st.sidebar:
                 LANGUAGES[st.session_state.language]["score_title"],
                 f"{result.get('overall_score', 0)}/100",
             )
-            if st.session_state.last_score_message_video_name != uploaded_video.name:
+            if st.session_state.last_score_message_video_signature != uploaded_video_signature:
+                report = add_generated_report(uploaded_video.name, result)
                 st.session_state.messages.append({
                     "role": "assistant",
                     "content": format_score_summary(result),
+                    "report_id": report["id"],
                 })
                 st.session_state.last_score_message_video_name = uploaded_video.name
+                st.session_state.last_score_message_video_signature = uploaded_video_signature
 
     st.divider()
     if st.button(LANGUAGES[st.session_state.language]["clear_chat"]):
         st.session_state.messages = []
         st.session_state.viral_score_result = None
         st.session_state.scored_video_name = None
+        st.session_state.scored_video_signature = None
         st.session_state.last_score_message_video_name = None
+        st.session_state.last_score_message_video_signature = None
+        st.session_state.generated_reports = []
         st.session_state.uploader_key += 1  # Increment key to reset file_uploader
         st.rerun()
 
@@ -204,6 +370,16 @@ if st.session_state.viral_score_result:
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
+        if "report_id" in message:
+            report = get_report(message["report_id"])
+            if report:
+                st.download_button(
+                    "Download PDF report",
+                    data=report["pdf_bytes"],
+                    file_name=report["file_name"],
+                    mime="application/pdf",
+                    key=f"download_{report['id']}",
+                )
         if "video" in message:
             st.video(message["video"])
 
