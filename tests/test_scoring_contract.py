@@ -2,6 +2,7 @@ from backend.app.schemas.scoring import ViralScoreResponse
 from backend.app.extractors.visual_extractor import extract_hook_frames
 from backend.app.core.aggregator import aggregate_score
 from backend.app.agents.engagement import run_engagement_agent
+from backend.app.agents.hook import run_hook_agent
 from backend.app.agents.niche_fit import run_niche_fit_agent
 from backend.app.agents.retention import run_retention_agent
 from backend.app.agents.seo import run_seo_agent
@@ -207,6 +208,46 @@ def test_non_hook_agents_emit_skill_breakdowns(monkeypatch):
         "brand_consistency",
         "viewer_problem_match",
     }
+
+
+def test_hook_agent_emits_imported_skill_breakdown(monkeypatch):
+    import asyncio
+
+    monkeypatch.setenv("AGENT_LLM_ENABLED", "false")
+
+    result = asyncio.run(
+        run_hook_agent(
+            {
+                "text_script": "Stop making this skincare mistake. Save this 3 step fix before your next routine.",
+                "niche": "skincare tips",
+                "audience": "students",
+                "visual_features": {
+                    "hook_intensity": 9,
+                    "pacing_rate": 1.4,
+                },
+                "hook_frames_b64": ["frame"] * 9,
+            }
+        )
+    )
+
+    assert {
+        "scroll_stop",
+        "specificity",
+        "curiosity",
+        "emotion",
+        "audience_fit",
+        "cta_engagement",
+        "pattern_match",
+        "retention_predictor",
+        "rewrite",
+        "sound_pacing",
+        "structure",
+        "visual_hook",
+        "curiosity_gap",
+        "visual_disruption",
+    } <= set(result.skills)
+    assert result.skills["curiosity_gap"].score == result.skills["curiosity"].score
+    assert result.skills["visual_disruption"].score == result.skills["visual_hook"].score
 
 
 def test_manual_transcript_takes_precedence_over_whisper(monkeypatch):

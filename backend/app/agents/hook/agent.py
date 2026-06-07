@@ -18,13 +18,23 @@ Return only valid JSON matching this shape:
   "skills": {
     "scroll_stop": {"score": 0, "reason": "", "suggestions": []},
     "specificity": {"score": 0, "reason": "", "suggestions": []},
+    "curiosity": {"score": 0, "reason": "", "suggestions": []},
+    "emotion": {"score": 0, "reason": "", "suggestions": []},
+    "audience_fit": {"score": 0, "reason": "", "suggestions": []},
+    "cta_engagement": {"score": 0, "reason": "", "suggestions": []},
+    "pattern_match": {"score": 0, "reason": "", "suggestions": []},
+    "retention_predictor": {"score": 0, "reason": "", "suggestions": []},
+    "rewrite": {"score": 0, "reason": "", "suggestions": []},
+    "sound_pacing": {"score": 0, "reason": "", "suggestions": []},
+    "structure": {"score": 0, "reason": "", "suggestions": []},
+    "visual_hook": {"score": 0, "reason": "", "suggestions": []},
     "curiosity_gap": {"score": 0, "reason": "", "suggestions": []},
     "visual_disruption": {"score": 0, "reason": "", "suggestions": []}
   },
   "extra": {}
 }
 
-Analyze frame clarity, visual disruption, first-frame readability, opening text/script specificity, and whether viewers have a reason to keep watching. Give exact first-second fixes."""
+Analyze frame clarity, visual disruption, first-frame readability, opening text/script specificity, curiosity, emotion, audience fit, CTA strength, hook pattern, retention prediction, rewrite opportunity, sound pacing, and structure. Give exact first-second fixes."""
 
 
 def build_hook_fallback(state_data: dict[str, Any]) -> AgentResult:
@@ -35,16 +45,23 @@ def build_hook_fallback(state_data: dict[str, Any]) -> AgentResult:
     hook_intensity = float(visual_features.get("hook_intensity") or 0)
     pacing_rate = float(visual_features.get("pacing_rate") or 0)
 
-    visual_disruption_score = min(90, 55 + int(hook_intensity * 1.2) + int(pacing_rate * 8))
-    specificity_score = 70 if text and text != "Transcript was not provided." else 55
-    curiosity_score = 72 if any(token in text.lower() for token in ["?", "secret", "mistake", "why", "how"]) else 58
-    scroll_stop_score = 72 if len(hook_frames) >= 9 else 62
+    skills = build_hook_skills(
+        text=text,
+        niche=state_data.get("niche"),
+        audience=state_data.get("audience"),
+        hook_intensity=hook_intensity,
+        pacing_rate=pacing_rate,
+        frame_count=len(hook_frames),
+    )
 
     score = round(
-        scroll_stop_score * 0.30
-        + specificity_score * 0.25
-        + curiosity_score * 0.20
-        + visual_disruption_score * 0.25
+        skills["scroll_stop"].score * 0.22
+        + skills["specificity"].score * 0.16
+        + skills["curiosity"].score * 0.16
+        + skills["emotion"].score * 0.10
+        + skills["visual_hook"].score * 0.18
+        + skills["structure"].score * 0.10
+        + skills["audience_fit"].score * 0.08
     )
 
     if hook_intensity < 5 and pacing_rate < 0.5:
@@ -60,12 +77,7 @@ def build_hook_fallback(state_data: dict[str, Any]) -> AgentResult:
         summary=f"Local hook diagnostic score {score}/100",
         reason=reason,
         actionable_tips=tips,
-        skills=build_hook_skills(
-            scroll_stop_score=scroll_stop_score,
-            specificity_score=specificity_score,
-            curiosity_score=curiosity_score,
-            visual_disruption_score=visual_disruption_score,
-        ),
+        skills=skills,
         extra={
             "heuristic_only": True,
             "confidence": "medium",
@@ -82,6 +94,6 @@ async def run_hook_agent(state_data: dict[str, Any]) -> AgentResult:
         system_prompt=HOOK_SYSTEM_PROMPT,
         state_data=state_data,
         fallback_result=build_hook_fallback(state_data),
-        focus="Evaluate hook strength, scroll stop, specificity, curiosity gap, and visual disruption from the first 3 seconds.",
+        focus="Evaluate hook strength using scroll stop, specificity, curiosity, emotion, audience fit, CTA engagement, hook pattern match, retention prediction, rewrite quality, sound pacing, structure, and visual hook from the first 3 seconds.",
         include_hook_frames=True,
     )
