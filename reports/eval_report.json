@@ -1,0 +1,208 @@
+{
+  "root": "C:\\Users\\Admin\\Documents\\trae_projects\\E2_VS\\Paracetamol_E2",
+  "count": 1,
+  "items": [
+    {
+      "video": "C:\\Users\\Admin\\Documents\\trae_projects\\E2_VS\\Paracetamol_E2\\sample.mp4",
+      "overall_score": 18,
+      "hook": 14,
+      "completion": 22,
+      "quality_flags": [
+        "missing_transcript",
+        "hook_frames_too_dark"
+      ],
+      "transcript_source": "none",
+      "ocr_lines": [
+        "SAMPLE",
+        "22",
+        "45",
+        "68"
+      ],
+      "breakdowns": {
+        "hook": {
+          "curiosity_gap": {
+            "score": 0,
+            "confidence": 0.45499999999999996,
+            "reason": "The opening contains no meaningful hook content at all, it is only an uncontextualized test sample counter with zero elements that create curiosity or give viewers a reason to keep watching.",
+            "evidence": [
+              "Opening 3 second frame only displays generic green 'SAMPLE' text with an incrementing number on a blank black background",
+              "No audio transcript, spoken hook, or context about the video's actual topic is present",
+              "There are no questions, surprising claims, or payoff teases to build a curiosity gap"
+            ],
+            "actionable_fix": "Replace the sample counter opening entirely with a 3 second hook that teases a specific unexpected payoff, for example open with a close up of a relevant visual and voiceover saying 'This $2 item fixed my broken fridge that a technician quoted $300 to repair'."
+          },
+          "opening_text": {
+            "score": 3,
+            "confidence": 0.45499999999999996,
+            "reason": "The opening text appears immediately in the opening hook window and is highly readable, but it is only generic placeholder test text with no specific, engaging hook content to attract or retain viewers.",
+            "evidence": [
+              "Green high-contrast 'SAMPLE [incrementing numeric value]' text is present from the very first opening frame, is easy to read against the black background, but contains no meaningful hook messaging."
+            ],
+            "actionable_fix": "Replace the generic placeholder SAMPLE test text with a specific, attention-grabbing opening hook: use a surprising claim, direct question, or clear statement of the video's value to immediately engage viewers within the opening window."
+          },
+          "visual_shock": {
+            "score": 10,
+            "confidence": 0.4322499999999999,
+            "reason": "The opening 3 seconds have almost no visual shock: the first frame is static plain glowing green text on a featureless black background, there is only very slow incremental number change with no strong motion, no surprise, and no pattern break to grab attention.",
+            "evidence": [
+              "First frame only shows static 'SAMPLE 0' green text on empty black background, no attention-grabbing visual elements",
+              "The only change across the first 3 seconds is slow incremental updates to the trailing number, no fast movement, flash, or unexpected visual event",
+              "There is no surprising or pattern-breaking content in the opening window"
+            ],
+            "actionable_fix": "Replace the static slow-count text opening with a high-impact dynamic opening: add a fast flash effect, unexpected visual reveal, or sharp motion transition in the first frame, and use higher contrast or more dynamic visual elements to create immediate visual shock within the first 3 seconds."
+          },
+          "hook_score": 13,
+          "hook_score_raw": 3,
+          "transcript_excerpt": "Transcript was not provided.",
+          "ocr_text_lines": [
+            "SAMPLE",
+            "22",
+            "45",
+            "68"
+          ]
+        },
+        "retention": {
+          "pacing": {
+            "score": 1,
+            "confidence": 0.4322499999999999,
+            "reason": "The video has almost no dynamic visual change, consisting solely of slow incremental number updates on a static black background with no intentional scene cuts, action, or varied content, resulting in excessive dead time.",
+            "evidence": [
+              "All sampled frames feature identical static 'SAMPLE' text on a solid black background, with only the adjacent two-digit number incrementing slowly",
+              "There are no scene changes, camera movement, or new visual elements introduced across the full sampled sequence",
+              "No dialogue, sound cues, or narrative beats are present to fill the static runtime"
+            ],
+            "actionable_fix": "Trim unnecessary dead time, add fast, intentional visual changes, action, or hook beats every 1-2 seconds to keep pacing tight and eliminate unengaging static stretches."
+          },
+          "attention_decay": {
+            "score": 1,
+            "confidence": 0.44589999999999996,
+            "reason": "The video has no opening hook, no discernible value, and no interesting visual or audio content, so near-total viewer dropoff will occur within the first 3 seconds of playback.",
+            "evidence": [
+              "The opening frame only shows static text on a black screen with no immediate payoff or hook to stop scrollers",
+              "The only ongoing change is a trivial number increment that provides no entertainment or informational value to viewers",
+              "There are no cues to signal upcoming interesting content, so viewers have no incentive to continue watching"
+            ],
+            "actionable_fix": "Add a high-impact opening hook within the first 2 seconds, introduce clear, engaging content (visuals, audio, narrative) immediately, and build in small payoffs at regular intervals to reduce early dropoff."
+          },
+          "retention_score": 10,
+          "retention_score_raw": 1
+        },
+        "engagement": {
+          "emotion": {
+            "score": 0,
+            "confidence": 0.45499999999999996,
+            "reason": "This is a generic placeholder test sequence with no emotional triggers, narrative, or stimulating elements that would spark any emotional response from viewers.",
+            "evidence": [
+              "All on-screen content is limited to 'SAMPLE' text and incrementing numeric values on a blank black background, no dialogue, story, or emotional cues are present"
+            ],
+            "actionable_fix": "Replace this placeholder counting sequence with an opening that delivers a clear emotional hook (curiosity, surprise, relatable frustration, joy) within the first 2 seconds of the clip to drive early engagement."
+          },
+          "relatability": {
+            "score": 0,
+            "confidence": 0.45499999999999996,
+            "reason": "There are no references to shared experiences, common audience pain points, personal anecdotes, or relatable scenarios present in this placeholder test content.",
+            "evidence": [
+              "The displayed content is entirely generic test data with no connection to viewer experiences, interests, or daily life"
+            ],
+            "actionable_fix": "Add a relatable opening line or visual that references a widely shared experience relevant to your target audience immediately, to give viewers a personal reason to keep watching and interact."
+          },
+          "engagement_score": 10,
+          "engagement_score_raw": 0
+        },
+        "trend": {
+          "trend_topic": {
+            "score": 0,
+            "confidence": 0.45499999999999996,
+            "reason": "No coherent, trend-relevant topic exists in this content, which only contains generic placeholder 'SAMPLE' text and arbitrary incrementing numeric values with no thematic or narrative context.",
+            "evidence": [
+              "All visible content is placeholder 'SAMPLE' labeling paired with random incrementing numbers, no discernible topic, commentary, or narrative tied to any existing trending subject"
+            ],
+            "actionable_fix": "Replace the placeholder sample content with clear, contextually relevant content tied to a high-performing current trending topic, including narrative or commentary that aligns with audience interest for that trend."
+          },
+          "trend_format": {
+            "score": 0,
+            "confidence": 0.4322499999999999,
+            "reason": "The content uses only a static unadorned text display with no structural, stylistic, or pacing elements that match current short-form trend formats, with no audio, hook, or dynamic visual elements present.",
+            "evidence": [
+              "The only visual is static glowing green text on a solid black background, no trending audio, transitions, opening hook, or standard trend structure is included"
+            ],
+            "actionable_fix": "Implement a matching trending audio track, add dynamic visual effects/transitions, include an engaging opening hook, and adjust pacing to match the requirements of the target trend format."
+          },
+          "trend_score": 10,
+          "trend_score_raw": 0
+        },
+        "visual": {
+          "clarity": {
+            "score": 9,
+            "confidence": 0.4322499999999999,
+            "reason": "All text content is fully legible, with very high contrast between bright green foreground text and solid black background. There is no motion blur, obscuration, or distortion that impacts readability, only very minor pixelation on font edges that does not interfere with character recognition.",
+            "evidence": [
+              "All sequential text strings (SAMPLE paired with numeric values 0, 11, 22, 34, 45, 56, 68, 79) are fully distinguishable and readable",
+              "High contrast between text and background eliminates any readability barriers"
+            ],
+            "actionable_fix": "No critical fixes required; the current text rendering is sufficiently clear for all readability use cases."
+          },
+          "composition": {
+            "score": 6,
+            "confidence": 0.40950000000000003,
+            "reason": "The only visual content (text block) is consistently clustered on the left side of the frame, leaving a large unused expanse of empty black negative space on the right half of the canvas, creating an unbalanced, lopsided layout.",
+            "evidence": [
+              "The text block sits ~20% from the left edge of every frame, with over 60% of the total frame width as empty unused space",
+              "There are no other visual elements to balance the left-aligned text placement"
+            ],
+            "actionable_fix": "Horizontally center the text block within the frame to evenly distribute negative space, or add complementary visual elements to the right side of the frame to balance the layout."
+          },
+          "visual_score": 15,
+          "visual_score_raw": 8
+        },
+        "audio": {
+          "audio_clarity": {
+            "score": 0,
+            "confidence": 0.0,
+            "reason": "No transcript of the spoken audio content was provided, so there is no data available to evaluate the clarity, intelligibility, or punch of the spoken hook.",
+            "evidence": [
+              "No verbatim transcript of the target audio was supplied for analysis"
+            ],
+            "actionable_fix": "Provide the full, accurate transcript of the spoken audio hook to enable assessment of speech clarity, delivery punch, and intelligibility."
+          },
+          "audio_trend_fit": {
+            "score": 0,
+            "confidence": 0.0,
+            "reason": "No audio transcript or trend context data was provided, so there is no information available to compare the audio style against current platform trends.",
+            "evidence": [
+              "No live audio trend context was supplied for reference",
+              "No transcript exists to infer audio tone, pacing, keyword usage, or format characteristics"
+            ],
+            "actionable_fix": "Share both the full audio transcript and relevant current platform audio trend data to evaluate how well the audio style matches trending content patterns."
+          },
+          "audio_score": 10,
+          "audio_score_raw": 0
+        },
+        "shareability": {
+          "value_density": {
+            "score": 0,
+            "confidence": 0.45499999999999996,
+            "reason": "This is only placeholder sample footage with no substantive, useful, entertaining or informative value for viewers. It only displays a generic SAMPLE label paired with incrementing arbitrary numbers, no meaningful content is present.",
+            "evidence": [
+              "OCR only shows generic 'SAMPLE' text paired with random incrementing numeric values, no transcript or useful content is provided",
+              "All frames are a black background with only green placeholder counter text, no additional visual or contextual value"
+            ],
+            "actionable_fix": "Replace this placeholder sample footage with actual high-value content (actionable tips, useful facts, entertaining narrative, practical advice) that delivers clear, specific utility to viewers."
+          },
+          "save_share_cta": {
+            "score": 0,
+            "confidence": 0.45499999999999996,
+            "reason": "There is no visible, verbal, or on-screen call to action prompting viewers to save or share this content. No CTA of any kind appears in the provided frames.",
+            "evidence": [
+              "No save/share prompt, text, or visual cue exists in any of the provided frames",
+              "OCR text contains no language referencing saving, sharing, or interacting with the content"
+            ],
+            "actionable_fix": "Once the content is updated to have meaningful shareable value, add a clear explicit CTA prompting viewers to save the content for later reference or share it with relevant audiences."
+          },
+          "shareability_score": 10,
+          "shareability_score_raw": 0
+        }
+      }
+    }
+  ]
+}
