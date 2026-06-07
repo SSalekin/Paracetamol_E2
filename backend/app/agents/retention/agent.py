@@ -1,4 +1,5 @@
-from backend.app.schemas.scoring import AgentResult, AgentSkillScore
+from backend.app.agents.retention.skills import build_retention_skills
+from backend.app.schemas.scoring import AgentResult
 
 
 async def run_retention_agent(state_data: dict) -> AgentResult:
@@ -30,28 +31,15 @@ async def run_retention_agent(state_data: dict) -> AgentResult:
         summary=f"Retention score {score}/100",
         reason=reason,
         actionable_tips=tips,
-        skills={
-            "opening_pacing": AgentSkillScore(
-                score=opening_pacing_score,
-                reason=f"Estimated from opening pacing rate {pacing_rate}.",
-                suggestions=["Add a visible cut, zoom, or overlay change inside the first second."],
-            ),
-            "payoff_preview": AgentSkillScore(
-                score=payoff_preview_score,
-                reason="Estimated from whether the short opening gives enough evidence of an early payoff.",
-                suggestions=["Preview the payoff before second 2 so viewers know why to stay."],
-            ),
-            "dropoff_risk": AgentSkillScore(
-                score=dropoff_risk_score,
-                reason=reason,
-                suggestions=tips,
-            ),
-            "ending_drag": AgentSkillScore(
-                score=ending_drag_score,
-                reason="Short videos have less room for outro drag; longer videos need stronger ending discipline.",
-                suggestions=["Cut the video immediately after the payoff; avoid verbal outro cues."],
-            ),
-        },
+        skills=build_retention_skills(
+            opening_pacing_score=opening_pacing_score,
+            payoff_preview_score=payoff_preview_score,
+            dropoff_risk_score=dropoff_risk_score,
+            ending_drag_score=ending_drag_score,
+            pacing_rate=pacing_rate,
+            reason=reason,
+            tips=tips,
+        ),
         extra={
             "duration_seconds": duration,
             "pacing_rate": pacing_rate,

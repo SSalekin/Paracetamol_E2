@@ -1,12 +1,12 @@
 from backend.app.schemas.scoring import ViralScoreResponse
 from backend.app.extractors.visual_extractor import extract_hook_frames
 from backend.app.core.aggregator import aggregate_score
-from backend.app.agents.engagement_agent import run_engagement_agent
-from backend.app.agents.niche_fit_agent import run_niche_fit_agent
-from backend.app.agents.retention_agent import run_retention_agent
-from backend.app.agents.seo_agent import run_seo_agent
-from backend.app.agents.share_save_agent import run_share_save_agent
-from backend.app.agents.trend_agent import run_trend_agent
+from backend.app.agents.engagement import run_engagement_agent
+from backend.app.agents.niche_fit import run_niche_fit_agent
+from backend.app.agents.retention import run_retention_agent
+from backend.app.agents.seo import run_seo_agent
+from backend.app.agents.share_save import run_share_save_agent
+from backend.app.agents.trend import run_trend_agent
 
 
 def test_hook_frame_extraction_samples_three_frames_per_second(tmp_path):
