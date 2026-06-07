@@ -5,14 +5,14 @@ from typing import Any
 from backend.app.extractors.visual_extractor import extract_visual_package
 from backend.app.extractors.transcript_extractor import extract_text_script
 from backend.app.extractors.context_extractor import extract_context
-from backend.app.agents.hook_agent import run_hook_agent
-from backend.app.agents.retention_agent import run_retention_agent
-from backend.app.agents.share_save_agent import run_share_save_agent
-from backend.app.agents.seo_agent import run_seo_agent
-from backend.app.agents.trend_agent import run_trend_agent
-from backend.app.agents.niche_fit_agent import run_niche_fit_agent
-from backend.app.agents.engagement_agent import run_engagement_agent
-from backend.app.agents.final_scorer_agent import run_final_scorer_agent
+from backend.app.agents.hook import run_hook_agent
+from backend.app.agents.retention import run_retention_agent
+from backend.app.agents.share_save import run_share_save_agent
+from backend.app.agents.seo import run_seo_agent
+from backend.app.agents.trend import run_trend_agent
+from backend.app.agents.niche_fit import run_niche_fit_agent
+from backend.app.agents.engagement import run_engagement_agent
+from backend.app.agents.final_scorer import run_final_scorer_agent
 from backend.app.schemas.graph_state import VideoScoreGraphState
 from backend.app.core.aggregator import aggregate_score
 

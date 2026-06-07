@@ -1,6 +1,7 @@
 from typing import Any
 
-from backend.app.schemas.scoring import AgentResult, AgentSkillScore
+from backend.app.agents.hook.skills import build_hook_skills
+from backend.app.schemas.scoring import AgentResult
 
 
 async def run_hook_agent(state_data: dict[str, Any]) -> AgentResult:
@@ -36,28 +37,12 @@ async def run_hook_agent(state_data: dict[str, Any]) -> AgentResult:
         summary=f"Local hook diagnostic score {score}/100",
         reason=reason,
         actionable_tips=tips,
-        skills={
-            "scroll_stop": AgentSkillScore(
-                score=scroll_stop_score,
-                reason="Estimated from available first-three-second frame samples.",
-                suggestions=["Keep the strongest visual contrast in the first frame."],
-            ),
-            "specificity": AgentSkillScore(
-                score=specificity_score,
-                reason="Estimated from whether usable transcript/script context exists.",
-                suggestions=["Name the specific outcome or target viewer immediately."],
-            ),
-            "curiosity_gap": AgentSkillScore(
-                score=curiosity_score,
-                reason="Estimated from script/question/curiosity trigger terms.",
-                suggestions=["Open a clear information gap before explaining."],
-            ),
-            "visual_disruption": AgentSkillScore(
-                score=visual_disruption_score,
-                reason="Estimated from OpenCV motion and scene-cut features.",
-                suggestions=["Add a pattern break in the first second if the opening is static."],
-            ),
-        },
+        skills=build_hook_skills(
+            scroll_stop_score=scroll_stop_score,
+            specificity_score=specificity_score,
+            curiosity_score=curiosity_score,
+            visual_disruption_score=visual_disruption_score,
+        ),
         extra={
             "heuristic_only": True,
             "confidence": "medium",
