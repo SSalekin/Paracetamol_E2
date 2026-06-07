@@ -1,4 +1,4 @@
-from backend.app.schemas.scoring import AgentResult
+from backend.app.schemas.scoring import AgentResult, AgentSkillScore
 
 
 async def run_retention_agent(state_data: dict) -> AgentResult:
@@ -19,13 +19,39 @@ async def run_retention_agent(state_data: dict) -> AgentResult:
         reason = "Opening pacing is acceptable, but full-body retention evidence is limited."
         tips = ["Add a payoff preview before second 2."]
 
+    opening_pacing_score = 45 if pacing_rate < 0.5 and duration > 4 else min(85, 60 + int(pacing_rate * 12))
+    payoff_preview_score = 55 if duration > 4 else 70
+    dropoff_risk_score = score
+    ending_drag_score = 70 if duration <= 4 else 60
+
     return AgentResult(
         name="completion_rate",
         score=score,
         summary=f"Retention score {score}/100",
         reason=reason,
         actionable_tips=tips,
-        skills={},
+        skills={
+            "opening_pacing": AgentSkillScore(
+                score=opening_pacing_score,
+                reason=f"Estimated from opening pacing rate {pacing_rate}.",
+                suggestions=["Add a visible cut, zoom, or overlay change inside the first second."],
+            ),
+            "payoff_preview": AgentSkillScore(
+                score=payoff_preview_score,
+                reason="Estimated from whether the short opening gives enough evidence of an early payoff.",
+                suggestions=["Preview the payoff before second 2 so viewers know why to stay."],
+            ),
+            "dropoff_risk": AgentSkillScore(
+                score=dropoff_risk_score,
+                reason=reason,
+                suggestions=tips,
+            ),
+            "ending_drag": AgentSkillScore(
+                score=ending_drag_score,
+                reason="Short videos have less room for outro drag; longer videos need stronger ending discipline.",
+                suggestions=["Cut the video immediately after the payoff; avoid verbal outro cues."],
+            ),
+        },
         extra={
             "duration_seconds": duration,
             "pacing_rate": pacing_rate,

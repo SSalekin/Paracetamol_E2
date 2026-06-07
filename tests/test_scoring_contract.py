@@ -1,6 +1,12 @@
 from backend.app.schemas.scoring import ViralScoreResponse
 from backend.app.extractors.visual_extractor import extract_hook_frames
 from backend.app.core.aggregator import aggregate_score
+from backend.app.agents.engagement_agent import run_engagement_agent
+from backend.app.agents.niche_fit_agent import run_niche_fit_agent
+from backend.app.agents.retention_agent import run_retention_agent
+from backend.app.agents.seo_agent import run_seo_agent
+from backend.app.agents.share_save_agent import run_share_save_agent
+from backend.app.agents.trend_agent import run_trend_agent
 
 
 def test_hook_frame_extraction_samples_three_frames_per_second(tmp_path):
@@ -133,3 +139,68 @@ def test_fallback_aggregator_does_not_over_penalize_low_confidence_context_gaps(
     )
 
     assert score.overall_score >= 68
+
+
+async def _collect_skill_agents():
+    state = {
+        "text_script": "How to avoid this mistake? Save this checklist and comment which one you would use.",
+        "trend_context": "Trending sound is rising this week.",
+        "niche": "skincare tips",
+        "audience": "students",
+        "visual_features": {
+            "duration_seconds": 8,
+            "pacing_rate": 1.2,
+        },
+    }
+
+    return {
+        "retention": await run_retention_agent(state),
+        "share_save": await run_share_save_agent(state),
+        "seo": await run_seo_agent(state),
+        "trend": await run_trend_agent(state),
+        "engagement": await run_engagement_agent(state),
+        "niche_fit": await run_niche_fit_agent(state),
+    }
+
+
+def test_non_hook_agents_emit_skill_breakdowns():
+    import asyncio
+
+    results = asyncio.run(_collect_skill_agents())
+
+    assert set(results["retention"].skills) == {
+        "opening_pacing",
+        "payoff_preview",
+        "dropoff_risk",
+        "ending_drag",
+    }
+    assert set(results["share_save"].skills) == {
+        "utility_value",
+        "emotional_trigger",
+        "identity_shareability",
+        "save_prompt_strength",
+    }
+    assert set(results["seo"].skills) == {
+        "spoken_keyword",
+        "on_screen_keyword",
+        "niche_query_match",
+        "search_intent_clarity",
+    }
+    assert set(results["trend"].skills) == {
+        "trend_context_available",
+        "sound_freshness",
+        "audio_visual_sync",
+        "trend_fit",
+    }
+    assert set(results["engagement"].skills) == {
+        "comment_trigger",
+        "curiosity_loop",
+        "debate_potential",
+        "replay_trigger",
+    }
+    assert set(results["niche_fit"].skills) == {
+        "audience_clarity",
+        "niche_relevance",
+        "brand_consistency",
+        "viewer_problem_match",
+    }
