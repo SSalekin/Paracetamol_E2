@@ -27,7 +27,9 @@ async def extractor_node(state: VideoScoreGraphState) -> dict[str, Any]:
         state["video_path"],
     )
 
-    text_script = extract_text_script(
+    text_started = time.perf_counter()
+    text_script = await extract_text_script(
+        video_path=state["video_path"],
         provided_transcript=state.get("full_transcript"),
         fallback_text=state.get("trend_context", ""),
     )
@@ -41,6 +43,8 @@ async def extractor_node(state: VideoScoreGraphState) -> dict[str, Any]:
     debug_trace.append(
         f"extractor:visual_features={visual_package['visual_features']}"
     )
+    debug_trace.append(f"extractor:transcript_chars={len(text_script)}")
+    debug_trace.append(f"extractor:transcript_duration={time.perf_counter() - text_started:.2f}s")
     debug_trace.append(f"extractor:duration={time.perf_counter() - started:.2f}s")
     debug_trace.append("extractor:complete")
 
