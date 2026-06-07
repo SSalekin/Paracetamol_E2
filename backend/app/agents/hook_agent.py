@@ -1,114 +1,68 @@
-import json
 from typing import Any
 
-from langchain_core.messages import HumanMessage, SystemMessage
-
-from backend.app.core.llm import get_llm
-from backend.app.schemas.scoring import AgentResult
-
-
-HOOK_AGENT_SYSTEM_PROMPT = """
-You are Agent 1: Hook Strength Auditor.
-
-You evaluate only the first 3 seconds of a short-form video.
-
-You receive:
-- visual_features from OpenCV
-- transcript/script text
-- target niche
-- target audience
-- sampled first-3-second frames
-
-Return only valid JSON matching this shape:
-
-{
-  "name": "hook_strength",
-  "score": 0,
-  "summary": "",
-  "reason": "",
-  "actionable_tips": [],
-  "skills": {
-    "scroll_stop": {"score": 0, "reason": "", "suggestions": []},
-    "specificity": {"score": 0, "reason": "", "suggestions": []},
-    "curiosity_gap": {"score": 0, "reason": "", "suggestions": []},
-    "visual_disruption": {"score": 0, "reason": "", "suggestions": []}
-  },
-  "extra": {}
-}
-
-Rules:
-- Score from 0 to 100.
-- Be concrete.
-- Do not say generic advice like "make it engaging".
-- If evidence is missing, say that explicitly.
-"""
-
-
-def _image_payload(frames_b64: list[str]) -> list[dict[str, Any]]:
-    return [
-        {
-            "type": "image_url",
-            "image_url": {
-                "url": f"data:image/jpeg;base64,{frame_b64}",
-            },
-        }
-        for frame_b64 in frames_b64
-    ]
-
-
-def _extract_json(text: str) -> dict[str, Any]:
-    text = text.strip()
-
-    if "```" in text:
-        lines = [
-            line
-            for line in text.splitlines()
-            if not line.strip().startswith("```")
-        ]
-        text = "\n".join(lines).strip()
-
-    start = text.find("{")
-    end = text.rfind("}")
-
-    if start == -1 or end == -1 or end <= start:
-        raise RuntimeError("Hook agent response did not contain JSON.")
-
-    return json.loads(text[start : end + 1])
+from backend.app.schemas.scoring import AgentResult, AgentSkillScore
 
 
 async def run_hook_agent(state_data: dict[str, Any]) -> AgentResult:
-    llm = get_llm()
+    visual_features = state_data.get("visual_features", {})
+    text = (state_data.get("text_script") or "").strip()
+    hook_frames = state_data.get("hook_frames_b64", [])
 
-    user_text = f"""
-Niche: {state_data.get("niche")}
-Audience: {state_data.get("audience")}
+    hook_intensity = float(visual_features.get("hook_intensity") or 0)
+    pacing_rate = float(visual_features.get("pacing_rate") or 0)
 
-Transcript:
-{state_data.get("text_script")}
+    visual_disruption_score = min(90, 55 + int(hook_intensity * 1.2) + int(pacing_rate * 8))
+    specificity_score = 70 if text and text != "Transcript was not provided." else 55
+    curiosity_score = 72 if any(token in text.lower() for token in ["?", "secret", "mistake", "why", "how"]) else 58
+    scroll_stop_score = 72 if len(hook_frames) >= 9 else 62
 
-Visual features:
-{state_data.get("visual_features")}
-
-Evaluate the hook only.
-"""
-
-    user_content = [
-        {"type": "text", "text": user_text},
-        *_image_payload(state_data.get("hook_frames_b64", [])),
-    ]
-
-    response = await llm.ainvoke(
-        [
-            SystemMessage(content=HOOK_AGENT_SYSTEM_PROMPT),
-            HumanMessage(content=user_content),
-        ]
+    score = round(
+        scroll_stop_score * 0.30
+        + specificity_score * 0.25
+        + curiosity_score * 0.20
+        + visual_disruption_score * 0.25
     )
 
-    raw_content = getattr(response, "content", response)
+    if hook_intensity < 5 and pacing_rate < 0.5:
+        reason = "Opening hook appears visually calm from OpenCV motion/cut signals; final visual judgment is deferred to the final multimodal scorer."
+        tips = ["Add a visible change, zoom, cut, or text overlay inside the first second."]
+    else:
+        reason = "Opening has enough visual or pacing signal to be a plausible scroll-stop hook; final visual judgment is deferred to the final multimodal scorer."
+        tips = ["Make the first on-screen text state the payoff in six words or fewer."]
 
-    if not isinstance(raw_content, str):
-        raw_content = str(raw_content)
-
-    payload = _extract_json(raw_content)
-
-    return AgentResult.model_validate(payload)
+    return AgentResult(
+        name="hook_strength",
+        score=score,
+        summary=f"Local hook diagnostic score {score}/100",
+        reason=reason,
+        actionable_tips=tips,
+        skills={
+            "scroll_stop": AgentSkillScore(
+                score=scroll_stop_score,
+                reason="Estimated from available first-three-second frame samples.",
+                suggestions=["Keep the strongest visual contrast in the first frame."],
+            ),
+            "specificity": AgentSkillScore(
+                score=specificity_score,
+                reason="Estimated from whether usable transcript/script context exists.",
+                suggestions=["Name the specific outcome or target viewer immediately."],
+            ),
+            "curiosity_gap": AgentSkillScore(
+                score=curiosity_score,
+                reason="Estimated from script/question/curiosity trigger terms.",
+                suggestions=["Open a clear information gap before explaining."],
+            ),
+            "visual_disruption": AgentSkillScore(
+                score=visual_disruption_score,
+                reason="Estimated from OpenCV motion and scene-cut features.",
+                suggestions=["Add a pattern break in the first second if the opening is static."],
+            ),
+        },
+        extra={
+            "heuristic_only": True,
+            "confidence": "medium",
+            "hook_intensity": hook_intensity,
+            "pacing_rate": pacing_rate,
+            "frame_count": len(hook_frames),
+        },
+    )

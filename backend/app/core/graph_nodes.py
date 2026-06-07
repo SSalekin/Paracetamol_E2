@@ -1,4 +1,5 @@
 import asyncio
+import time
 from typing import Any
 
 from backend.app.extractors.visual_extractor import extract_visual_package
@@ -11,6 +12,7 @@ from backend.app.agents.seo_agent import run_seo_agent
 from backend.app.agents.trend_agent import run_trend_agent
 from backend.app.agents.niche_fit_agent import run_niche_fit_agent
 from backend.app.agents.engagement_agent import run_engagement_agent
+from backend.app.agents.final_scorer_agent import run_final_scorer_agent
 from backend.app.schemas.graph_state import VideoScoreGraphState
 from backend.app.core.aggregator import aggregate_score
 
@@ -18,6 +20,7 @@ from backend.app.core.aggregator import aggregate_score
 async def extractor_node(state: VideoScoreGraphState) -> dict[str, Any]:
     debug_trace = list(state.get("debug_trace", []))
     debug_trace.append("extractor:start")
+    started = time.perf_counter()
 
     visual_package = await asyncio.to_thread(
         extract_visual_package,
@@ -38,6 +41,7 @@ async def extractor_node(state: VideoScoreGraphState) -> dict[str, Any]:
     debug_trace.append(
         f"extractor:visual_features={visual_package['visual_features']}"
     )
+    debug_trace.append(f"extractor:duration={time.perf_counter() - started:.2f}s")
     debug_trace.append("extractor:complete")
 
     return {
@@ -50,6 +54,7 @@ async def extractor_node(state: VideoScoreGraphState) -> dict[str, Any]:
 async def agents_node(state: VideoScoreGraphState) -> dict[str, Any]:
     debug_trace = list(state.get("debug_trace", []))
     debug_trace.append("agents:start")
+    started = time.perf_counter()
 
     results = await asyncio.gather(
         run_hook_agent(dict(state)),
@@ -69,6 +74,7 @@ async def agents_node(state: VideoScoreGraphState) -> dict[str, Any]:
     for result in results:
         debug_trace.append(f"agents:{result.name}={result.score}")
 
+    debug_trace.append(f"agents:duration={time.perf_counter() - started:.2f}s")
     debug_trace.append("agents:complete")
 
     return {
@@ -79,8 +85,16 @@ async def agents_node(state: VideoScoreGraphState) -> dict[str, Any]:
 async def aggregator_node(state: VideoScoreGraphState) -> dict[str, Any]:
     debug_trace = list(state.get("debug_trace", []))
     debug_trace.append("aggregator:start")
+    started = time.perf_counter()
 
-    final_score = aggregate_score({**state, "debug_trace": debug_trace})
+    try:
+        final_score = await run_final_scorer_agent({**state, "debug_trace": debug_trace})
+        final_score.debug_trace.append("aggregator:llm_final_scorer")
+    except Exception as exc:
+        debug_trace.append(f"aggregator:llm_final_scorer_failed={exc}")
+        final_score = aggregate_score({**state, "debug_trace": debug_trace})
+
+    final_score.debug_trace.append(f"aggregator:duration={time.perf_counter() - started:.2f}s")
 
     return {
         "final_score": final_score,

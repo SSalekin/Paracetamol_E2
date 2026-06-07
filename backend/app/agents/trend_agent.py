@@ -12,14 +12,18 @@ async def run_trend_agent(state_data: dict) -> AgentResult:
     if missing:
         return AgentResult(
             name="sound_trend_timing",
-            score=50,
+            score=60,
             summary="Trend timing unknown",
-            reason="No live audio or trend context was provided, so trend timing cannot be verified.",
+            reason="No live audio or trend context was provided, so trend timing cannot be verified. This is neutral uncertainty, not evidence that the video is weak.",
             actionable_tips=[
                 "Provide the sound name, trend age, or keyword trend context before scoring this dimension."
             ],
             skills={},
-            extra={"trend_context_available": False},
+            extra={
+                "trend_context_available": False,
+                "heuristic_only": True,
+                "confidence": "low",
+            },
         )
 
     return AgentResult(
@@ -34,5 +38,7 @@ async def run_trend_agent(state_data: dict) -> AgentResult:
         extra={
             "trend_context_available": True,
             "trend_context": trend_context,
+            "heuristic_only": True,
+            "confidence": "medium",
         },
     )
