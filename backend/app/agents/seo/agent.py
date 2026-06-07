@@ -1,8 +1,31 @@
 from backend.app.agents.seo.skills import build_seo_skills
+from backend.app.agents.common import run_intelligent_agent
 from backend.app.schemas.scoring import AgentResult
 
 
-async def run_seo_agent(state_data: dict) -> AgentResult:
+SEO_SYSTEM_PROMPT = """You are the Search Keyword Relevance Agent.
+Judge search discoverability for short-form platforms. Consider spoken keywords, likely on-screen keyword opportunity, niche query match, and search intent clarity.
+
+Return only valid JSON matching this shape:
+{
+  "name": "search_keyword_relevance",
+  "score": 0,
+  "summary": "",
+  "reason": "",
+  "actionable_tips": [],
+  "skills": {
+    "spoken_keyword": {"score": 0, "reason": "", "suggestions": []},
+    "on_screen_keyword": {"score": 0, "reason": "", "suggestions": []},
+    "niche_query_match": {"score": 0, "reason": "", "suggestions": []},
+    "search_intent_clarity": {"score": 0, "reason": "", "suggestions": []}
+  },
+  "extra": {}
+}
+
+Tell the creator exactly which words to say or overlay."""
+
+
+def build_seo_fallback(state_data: dict) -> AgentResult:
     niche = state_data.get("niche", "").lower()
     text = state_data.get("text_script", "").lower()
     trend_context = state_data.get("trend_context", "").lower()
@@ -42,4 +65,14 @@ async def run_seo_agent(state_data: dict) -> AgentResult:
             "heuristic_only": True,
             "confidence": "medium" if keyword_hits else "low",
         },
+    )
+
+
+async def run_seo_agent(state_data: dict) -> AgentResult:
+    return await run_intelligent_agent(
+        agent_name="seo_agent",
+        system_prompt=SEO_SYSTEM_PROMPT,
+        state_data=state_data,
+        fallback_result=build_seo_fallback(state_data),
+        focus="Evaluate search keyword relevance, spoken keyword, on-screen keyword opportunity, niche query match, and search intent clarity.",
     )

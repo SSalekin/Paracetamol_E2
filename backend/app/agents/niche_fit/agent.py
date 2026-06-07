@@ -1,8 +1,31 @@
 from backend.app.agents.niche_fit.skills import build_niche_fit_skills
+from backend.app.agents.common import run_intelligent_agent
 from backend.app.schemas.scoring import AgentResult
 
 
-async def run_niche_fit_agent(state_data: dict) -> AgentResult:
+NICHE_FIT_SYSTEM_PROMPT = """You are the Content Niche Fit Agent.
+Judge whether the video clearly fits the target niche and audience. Consider audience clarity, niche relevance, brand consistency, and viewer problem match.
+
+Return only valid JSON matching this shape:
+{
+  "name": "content_niche_fit",
+  "score": 0,
+  "summary": "",
+  "reason": "",
+  "actionable_tips": [],
+  "skills": {
+    "audience_clarity": {"score": 0, "reason": "", "suggestions": []},
+    "niche_relevance": {"score": 0, "reason": "", "suggestions": []},
+    "brand_consistency": {"score": 0, "reason": "", "suggestions": []},
+    "viewer_problem_match": {"score": 0, "reason": "", "suggestions": []}
+  },
+  "extra": {}
+}
+
+Be concrete about whether the first seconds make the intended viewer obvious."""
+
+
+def build_niche_fit_fallback(state_data: dict) -> AgentResult:
     niche = state_data.get("niche", "")
     audience = state_data.get("audience", "")
     text = state_data.get("text_script", "")
@@ -43,4 +66,14 @@ async def run_niche_fit_agent(state_data: dict) -> AgentResult:
             "has_niche_keyword": has_niche,
             "has_audience_keyword": has_audience,
         },
+    )
+
+
+async def run_niche_fit_agent(state_data: dict) -> AgentResult:
+    return await run_intelligent_agent(
+        agent_name="niche_fit_agent",
+        system_prompt=NICHE_FIT_SYSTEM_PROMPT,
+        state_data=state_data,
+        fallback_result=build_niche_fit_fallback(state_data),
+        focus="Evaluate audience clarity, niche relevance, brand consistency, viewer problem match, and content niche fit.",
     )

@@ -1,8 +1,31 @@
 from backend.app.agents.engagement.skills import build_engagement_skills
+from backend.app.agents.common import run_intelligent_agent
 from backend.app.schemas.scoring import AgentResult
 
 
-async def run_engagement_agent(state_data: dict) -> AgentResult:
+ENGAGEMENT_SYSTEM_PROMPT = """You are the Early Engagement Velocity Agent.
+Judge whether the video is likely to trigger early comments, reactions, debate, replay, or fast watch signals.
+
+Return only valid JSON matching this shape:
+{
+  "name": "early_engagement_velocity",
+  "score": 0,
+  "summary": "",
+  "reason": "",
+  "actionable_tips": [],
+  "skills": {
+    "comment_trigger": {"score": 0, "reason": "", "suggestions": []},
+    "curiosity_loop": {"score": 0, "reason": "", "suggestions": []},
+    "debate_potential": {"score": 0, "reason": "", "suggestions": []},
+    "replay_trigger": {"score": 0, "reason": "", "suggestions": []}
+  },
+  "extra": {}
+}
+
+Avoid generic engagement advice. Give a specific prompt or structural change."""
+
+
+def build_engagement_fallback(state_data: dict) -> AgentResult:
     text = state_data.get("text_script", "").lower()
 
     engagement_triggers = [
@@ -41,4 +64,14 @@ async def run_engagement_agent(state_data: dict) -> AgentResult:
             "heuristic_only": True,
             "confidence": "medium" if matched else "low",
         },
+    )
+
+
+async def run_engagement_agent(state_data: dict) -> AgentResult:
+    return await run_intelligent_agent(
+        agent_name="engagement_agent",
+        system_prompt=ENGAGEMENT_SYSTEM_PROMPT,
+        state_data=state_data,
+        fallback_result=build_engagement_fallback(state_data),
+        focus="Evaluate comment trigger, curiosity loop, debate potential, replay trigger, and early engagement velocity.",
     )

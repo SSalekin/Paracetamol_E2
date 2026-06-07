@@ -1,8 +1,31 @@
 from backend.app.agents.retention.skills import build_retention_skills
+from backend.app.agents.common import run_intelligent_agent
 from backend.app.schemas.scoring import AgentResult
 
 
-async def run_retention_agent(state_data: dict) -> AgentResult:
+RETENTION_SYSTEM_PROMPT = """You are the Completion Rate / Retention Agent.
+Judge whether viewers will stay through the video. Use transcript, video context, duration, pacing, and hook-frame-derived visual features.
+
+Return only valid JSON matching this shape:
+{
+  "name": "completion_rate",
+  "score": 0,
+  "summary": "",
+  "reason": "",
+  "actionable_tips": [],
+  "skills": {
+    "opening_pacing": {"score": 0, "reason": "", "suggestions": []},
+    "payoff_preview": {"score": 0, "reason": "", "suggestions": []},
+    "dropoff_risk": {"score": 0, "reason": "", "suggestions": []},
+    "ending_drag": {"score": 0, "reason": "", "suggestions": []}
+  },
+  "extra": {}
+}
+
+Be specific about likely retention risk and exact cuts/edits."""
+
+
+def build_retention_fallback(state_data: dict) -> AgentResult:
     visual_features = state_data.get("visual_features", {})
     duration = visual_features.get("duration_seconds", 0)
     pacing_rate = visual_features.get("pacing_rate", 0)
@@ -44,4 +67,14 @@ async def run_retention_agent(state_data: dict) -> AgentResult:
             "duration_seconds": duration,
             "pacing_rate": pacing_rate,
         },
+    )
+
+
+async def run_retention_agent(state_data: dict) -> AgentResult:
+    return await run_intelligent_agent(
+        agent_name="retention_agent",
+        system_prompt=RETENTION_SYSTEM_PROMPT,
+        state_data=state_data,
+        fallback_result=build_retention_fallback(state_data),
+        focus="Evaluate completion rate, opening pacing, payoff preview, dropoff risk, and ending drag.",
     )
